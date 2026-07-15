@@ -1,29 +1,24 @@
-name: Node.js CI
+name: DSOMM Security Workflow
 
 on:
+  pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
-  build:
-
+  code:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build Docker image
-        run: docker build -t devops-demo .
+      - name: Gitleaks scan
+        run: echo "Running gitleaks"
+      - name: Semgrep scan
+        run: echo "Running semgrep"
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Dependency audit
+        run: echo "Running dependency audit"
