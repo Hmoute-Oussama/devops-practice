@@ -22,3 +22,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Dependency audit
         run: echo "Running dependency audit"
+      - name: Trivy image scan
+        run: echo "Running trivy"
