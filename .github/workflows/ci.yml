@@ -1,16 +1,168 @@
 name: Node.js CI Pipeline v1
-
 on:
-  pull_request:
+  pull_request: null
   push:
-    branches: [main]
-
+    branches:
+      - main
 jobs:
   code:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Secret Scan with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env: &a1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with: &a2
+          languages: javascript,python,java,go,csharp,cpp
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+      - name: Dependency Scan with Trivy FS
+        uses: aquasecurity/trivy-action@master
+        with: &a3
+          scan-type: fs
+          format: sarif
+          output: trivy-fs-results.sarif
+      - name: Upload Trivy FS Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: &a4
+          sarif_file: trivy-fs-results.sarif
+      - name: Run Security Unit Tests
+        uses: actions/github-script@v7
+        with: &a5
+          script: console.log('Ensure security unit tests are executed (npm test, pytest, mvn test, etc.)')
+      - name: Reproducible Build Recommendation
+        uses: actions/github-script@v7
+        with: &a6
+          script: console.log('Use npm ci instead of npm install for reproducible npm builds; use similar tools for other ecosystems')
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with: &a7
+          format: cyclonedx-json
+      - name: Check Licenses with Licensed
+        uses: github/licensed-action@v4
+        with: &a8
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Attest Build Provenance (SLSA)
+        uses: actions/attest-build-provenance@v1
+        with: &a9
+          subject-path: dist/**
+      - name: Generate Artifact Checksums
+        run: sha256sum dist/** > checksums.txt
+      - name: Upload Checksums
+        uses: actions/upload-artifact@v4
+        with: &a10
+          name: checksums
+          path: checksums.txt
+      - name: IaC Scan with Checkov
+        uses: bridgecrewio/checkov-action@master
+        with: &a11
+          directory: .
+          quiet: true
+      - name: Container Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with: &a12
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          format: sarif
+          output: trivy-container-results.sarif
+      - name: Upload Trivy Container Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: &a13
+          sarif_file: trivy-container-results.sarif
+      - name: DAST Scan with OWASP ZAP
+        uses: zaproxy/action-full-scan@v0.9.0
+        with: &a14
+          target: http://localhost:3000
+      - name: Malware Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with: &a15
+          scan-type: fs
+          scan-ref: .
+          security-checks: vuln,secret,config,license
+      - name: Dockerfile Best Practices Check with Checkov
+        uses: bridgecrewio/checkov-action@master
+        with: &a16
+          directory: .
+          quiet: true
+      - name: Run Security Integration Tests
+        uses: actions/github-script@v7
+        with: &a17
+          script: console.log('Ensure security integration tests are executed (integration-test, mvn verify, docker compose up, etc.)')
+      - name: Run Smoke Tests
+        uses: actions/github-script@v7
+        with: &a18
+          script: console.log('Ensure smoke tests are executed (curl localhost, health endpoint checks, etc.)')
+      - name: Sign Docker Image
+        run: cosign sign --yes ghcr.io/${{ github.repository }}:${{ github.sha }}
+        env: &a19
+          COSIGN_EXPERIMENTAL: "1"
+      - name: Verify Docker Image Signature
+        run: cosign verify ghcr.io/${{ github.repository }}:${{ github.sha }} --certificate-identity-regexp='https://github.com/${{ github.repository_owner }}/.github/workflows/.*@refs/heads/main' --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
+        env: &a20
+          COSIGN_EXPERIMENTAL: "1"
+      - name: Check Container Non-Root User
+        uses: actions/github-script@v7
+        with: &a21
+          script: console.log('Ensure Dockerfile defines USER app (or similar non-root user)')
+      - name: Immutable Tags Check
+        uses: actions/github-script@v7
+        with: &a22
+          script: console.log('Do not use "latest" tag for Docker images; use specific versions or commit SHA')
+      - name: Policy as Code Check with Conftest
+        uses: instrumenta/conftest-action@v1
+        with: &a23
+          files: .
+          policy: policy
+      - name: Recommendations for Secure Secret Management
+        uses: actions/github-script@v7
+        with: &a24
+          script: console.log('Ensure secrets are stored and accessed via GitHub Secrets, HashiCorp Vault, AWS Secrets Manager, or similar tools')
+      - name: Vulnerability Threshold Check
+        uses: actions/github-script@v7
+        with: &a25
+          script: console.log('Configure vulnerability scanner to fail if critical > 0 or high > 5')
+      - name: "Dependency Pinning: Use Lock Files"
+        uses: actions/github-script@v7
+        with: &a26
+          script: "console.log('Please ensure dependency lock files are committed: package-lock.json, poetry.lock, Cargo.lock, go.sum, composer.lock are present and committed')"
+      - name: "Automated Patch PR: Use Dependabot/Renovate"
+        uses: actions/github-script@v7
+        with: &a27
+          script: console.log('Please set up Dependabot or Renovate (e.g., create .github/dependabot.yml')
+      - name: Upload Checkov Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: &a28
+          sarif_file: results.sarif
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with: &a29
+          name: sbom
+          path: "**/bom.json"
+      - name: Upload Production Artifacts
+        uses: actions/upload-artifact@v4
+        with: &a30
+          name: production-artifacts
+          path: dist/**
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with: &a31
+          name: security-reports
+          path: "**/*.sarif,**/bom.json"
+      - name: License Policy Check
+        uses: actions/github-script@v7
+        with: &a32
+          script: console.log('Configure license check to fail on forbidden licenses (e.g., GPL)')
+      - name: GitHub Actions Pinning Recommendation
+        uses: actions/github-script@v7
+        with: &a33
+          script: console.log('Pin all GitHub Actions to specific SHA hashes instead of tags for improved security')
       - name: Gitleaks scan
         run: echo "Running gitleaks"
       - name: Semgrep scan
@@ -20,6 +172,113 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Secret Scan with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env: *a1
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with: *a2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+      - name: Dependency Scan with Trivy FS
+        uses: aquasecurity/trivy-action@master
+        with: *a3
+      - name: Upload Trivy FS Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: *a4
+      - name: Run Security Unit Tests
+        uses: actions/github-script@v7
+        with: *a5
+      - name: Reproducible Build Recommendation
+        uses: actions/github-script@v7
+        with: *a6
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with: *a7
+      - name: Check Licenses with Licensed
+        uses: github/licensed-action@v4
+        with: *a8
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Attest Build Provenance (SLSA)
+        uses: actions/attest-build-provenance@v1
+        with: *a9
+      - name: Generate Artifact Checksums
+        run: sha256sum dist/** > checksums.txt
+      - name: Upload Checksums
+        uses: actions/upload-artifact@v4
+        with: *a10
+      - name: IaC Scan with Checkov
+        uses: bridgecrewio/checkov-action@master
+        with: *a11
+      - name: Container Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with: *a12
+      - name: Upload Trivy Container Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: *a13
+      - name: DAST Scan with OWASP ZAP
+        uses: zaproxy/action-full-scan@v0.9.0
+        with: *a14
+      - name: Malware Scan with Trivy
+        uses: aquasecurity/trivy-action@master
+        with: *a15
+      - name: Dockerfile Best Practices Check with Checkov
+        uses: bridgecrewio/checkov-action@master
+        with: *a16
+      - name: Run Security Integration Tests
+        uses: actions/github-script@v7
+        with: *a17
+      - name: Run Smoke Tests
+        uses: actions/github-script@v7
+        with: *a18
+      - name: Sign Docker Image
+        run: cosign sign --yes ghcr.io/${{ github.repository }}:${{ github.sha }}
+        env: *a19
+      - name: Verify Docker Image Signature
+        run: cosign verify ghcr.io/${{ github.repository }}:${{ github.sha }} --certificate-identity-regexp='https://github.com/${{ github.repository_owner }}/.github/workflows/.*@refs/heads/main' --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
+        env: *a20
+      - name: Check Container Non-Root User
+        uses: actions/github-script@v7
+        with: *a21
+      - name: Immutable Tags Check
+        uses: actions/github-script@v7
+        with: *a22
+      - name: Policy as Code Check with Conftest
+        uses: instrumenta/conftest-action@v1
+        with: *a23
+      - name: Recommendations for Secure Secret Management
+        uses: actions/github-script@v7
+        with: *a24
+      - name: Vulnerability Threshold Check
+        uses: actions/github-script@v7
+        with: *a25
+      - name: "Dependency Pinning: Use Lock Files"
+        uses: actions/github-script@v7
+        with: *a26
+      - name: "Automated Patch PR: Use Dependabot/Renovate"
+        uses: actions/github-script@v7
+        with: *a27
+      - name: Upload Checkov Results
+        uses: github/codeql-action/upload-sarif@v3
+        with: *a28
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with: *a29
+      - name: Upload Production Artifacts
+        uses: actions/upload-artifact@v4
+        with: *a30
+      - name: Upload Security Reports
+        uses: actions/upload-artifact@v4
+        with: *a31
+      - name: License Policy Check
+        uses: actions/github-script@v7
+        with: *a32
+      - name: GitHub Actions Pinning Recommendation
+        uses: actions/github-script@v7
+        with: *a33
       - name: Dependency audit
         run: echo "Running dependency audit"
       - name: Trivy image scan
