@@ -1,16 +1,135 @@
 name: Node.js CI Pipeline v1
-
 on:
-  pull_request:
+  pull_request: null
   push:
-    branches: [main]
-
+    branches:
+      - main
 jobs:
   code:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Secret Scanning Recommendation
+        uses: actions/github-script@v7
+        with: &a1
+          script: console.log('Enable GitHub Secret Scanning or use Gitleaks/TruffleHog for secret detection')
+      - name: SAST Recommendation
+        uses: actions/github-script@v7
+        with: &a2
+          script: console.log('Use GitHub Code Scanning (CodeQL) or Semgrep for static analysis')
+      - name: SCA Recommendation
+        uses: actions/github-script@v7
+        with: &a3
+          script: console.log('Use GitHub Dependency Review, Dependabot, or Trivy for dependency scanning')
+      - name: Security Unit Tests Recommendation
+        uses: actions/github-script@v7
+        with: &a4
+          script: console.log('Ensure security unit tests are executed (npm test, pytest, mvn test, etc.)')
+      - name: Reproducible Build Recommendation
+        uses: actions/github-script@v7
+        with: &a5
+          script: console.log('Use npm ci instead of npm install for reproducible npm builds; use similar tools for other ecosystems')
+      - name: SBOM Recommendation
+        uses: actions/github-script@v7
+        with: &a6
+          script: console.log('Generate SBOM using Syft or CycloneDX GitHub Action')
+      - name: License Check Recommendation
+        uses: actions/github-script@v7
+        with: &a7
+          script: console.log('Configure license checking tool like FOSSA or Snyk for your dependencies')
+      - name: Artifact Signing Recommendation
+        uses: actions/github-script@v7
+        with: &a8
+          script: console.log('Sign artifacts using Sigstore Cosign')
+      - name: Build Provenance Recommendation
+        uses: actions/github-script@v7
+        with: &a9
+          script: console.log('Generate build provenance using actions/attest-build-provenance')
+      - name: Artifact Verification Recommendation
+        uses: actions/github-script@v7
+        with: &a10
+          script: console.log('Generate and verify artifact checksums (SHA256)')
+      - name: IaC Scan Recommendation
+        uses: actions/github-script@v7
+        with: &a11
+          script: console.log('Scan IaC using Checkov or Terrascan')
+      - name: Container Scan Recommendation
+        uses: actions/github-script@v7
+        with: &a12
+          script: console.log('Scan container images using Trivy or Grype')
+      - name: DAST Recommendation
+        uses: actions/github-script@v7
+        with: &a13
+          script: console.log('Perform DAST using OWASP ZAP or similar tools')
+      - name: Malware Scan Recommendation
+        uses: actions/github-script@v7
+        with: &a14
+          script: console.log('Perform malware scan using Trivy or similar tools')
+      - name: Dockerfile Best Practices Recommendation
+        uses: actions/github-script@v7
+        with: &a15
+          script: console.log('Check Dockerfile best practices using Checkov or Hadolint')
+      - name: Security Integration Tests Recommendation
+        uses: actions/github-script@v7
+        with: &a16
+          script: console.log('Ensure security integration tests are executed (integration-test, mvn verify, docker compose up, etc.)')
+      - name: Smoke Tests Recommendation
+        uses: actions/github-script@v7
+        with: &a17
+          script: console.log('Ensure smoke tests are executed (curl localhost, health endpoint checks, etc.)')
+      - name: Container Signing Recommendation
+        uses: actions/github-script@v7
+        with: &a18
+          script: console.log('Sign container images using Cosign')
+      - name: Signature Verification Recommendation
+        uses: actions/github-script@v7
+        with: &a19
+          script: console.log('Verify container image signatures using Cosign')
+      - name: Non-Root Container Recommendation
+        uses: actions/github-script@v7
+        with: &a20
+          script: console.log('Ensure Dockerfile defines USER app (or similar non-root user)')
+      - name: Immutable Tags Recommendation
+        uses: actions/github-script@v7
+        with: &a21
+          script: console.log('Do not use "latest" tag for Docker images; use specific versions or commit SHA')
+      - name: Policy as Code Recommendation
+        uses: actions/github-script@v7
+        with: &a22
+          script: console.log('Consider using Open Policy Agent (OPA) or Conftest for policy enforcement')
+      - name: Secret Management Recommendation
+        uses: actions/github-script@v7
+        with: &a23
+          script: console.log('Ensure secrets are stored and accessed via GitHub Secrets, HashiCorp Vault, AWS Secrets Manager, or similar tools')
+      - name: Vulnerability Threshold Recommendation
+        uses: actions/github-script@v7
+        with: &a24
+          script: console.log('Configure vulnerability scanner to fail if critical > 0 or high > 5')
+      - name: Dependency Pinning Recommendation
+        uses: actions/github-script@v7
+        with: &a25
+          script: "console.log('Please ensure dependency lock files are committed: package-lock.json, poetry.lock, Cargo.lock, go.sum, composer.lock are present and committed')"
+      - name: Automated Patch PR Recommendation
+        uses: actions/github-script@v7
+        with: &a26
+          script: console.log('Please set up Dependabot or Renovate (e.g., create .github/dependabot.yml)')
+      - name: SARIF Upload Recommendation
+        uses: actions/github-script@v7
+        with: &a27
+          script: console.log('Upload SARIF results to GitHub using codeql-action/upload-sarif')
+      - name: Security Reports Recommendation
+        uses: actions/github-script@v7
+        with: &a28
+          script: console.log('Upload SBOM, production artifacts, and security reports using actions/upload-artifact')
+      - name: License Policy Recommendation
+        uses: actions/github-script@v7
+        with: &a29
+          script: console.log('Configure license check to fail on forbidden licenses (e.g., GPL)')
+      - name: GitHub Actions Pinning Recommendation
+        uses: actions/github-script@v7
+        with: &a30
+          script: console.log('Pin all GitHub Actions to specific SHA hashes instead of tags for improved security')
       - name: Gitleaks scan
         run: echo "Running gitleaks"
       - name: Semgrep scan
@@ -20,6 +139,96 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Secret Scanning Recommendation
+        uses: actions/github-script@v7
+        with: *a1
+      - name: SAST Recommendation
+        uses: actions/github-script@v7
+        with: *a2
+      - name: SCA Recommendation
+        uses: actions/github-script@v7
+        with: *a3
+      - name: Security Unit Tests Recommendation
+        uses: actions/github-script@v7
+        with: *a4
+      - name: Reproducible Build Recommendation
+        uses: actions/github-script@v7
+        with: *a5
+      - name: SBOM Recommendation
+        uses: actions/github-script@v7
+        with: *a6
+      - name: License Check Recommendation
+        uses: actions/github-script@v7
+        with: *a7
+      - name: Artifact Signing Recommendation
+        uses: actions/github-script@v7
+        with: *a8
+      - name: Build Provenance Recommendation
+        uses: actions/github-script@v7
+        with: *a9
+      - name: Artifact Verification Recommendation
+        uses: actions/github-script@v7
+        with: *a10
+      - name: IaC Scan Recommendation
+        uses: actions/github-script@v7
+        with: *a11
+      - name: Container Scan Recommendation
+        uses: actions/github-script@v7
+        with: *a12
+      - name: DAST Recommendation
+        uses: actions/github-script@v7
+        with: *a13
+      - name: Malware Scan Recommendation
+        uses: actions/github-script@v7
+        with: *a14
+      - name: Dockerfile Best Practices Recommendation
+        uses: actions/github-script@v7
+        with: *a15
+      - name: Security Integration Tests Recommendation
+        uses: actions/github-script@v7
+        with: *a16
+      - name: Smoke Tests Recommendation
+        uses: actions/github-script@v7
+        with: *a17
+      - name: Container Signing Recommendation
+        uses: actions/github-script@v7
+        with: *a18
+      - name: Signature Verification Recommendation
+        uses: actions/github-script@v7
+        with: *a19
+      - name: Non-Root Container Recommendation
+        uses: actions/github-script@v7
+        with: *a20
+      - name: Immutable Tags Recommendation
+        uses: actions/github-script@v7
+        with: *a21
+      - name: Policy as Code Recommendation
+        uses: actions/github-script@v7
+        with: *a22
+      - name: Secret Management Recommendation
+        uses: actions/github-script@v7
+        with: *a23
+      - name: Vulnerability Threshold Recommendation
+        uses: actions/github-script@v7
+        with: *a24
+      - name: Dependency Pinning Recommendation
+        uses: actions/github-script@v7
+        with: *a25
+      - name: Automated Patch PR Recommendation
+        uses: actions/github-script@v7
+        with: *a26
+      - name: SARIF Upload Recommendation
+        uses: actions/github-script@v7
+        with: *a27
+      - name: Security Reports Recommendation
+        uses: actions/github-script@v7
+        with: *a28
+      - name: License Policy Recommendation
+        uses: actions/github-script@v7
+        with: *a29
+      - name: GitHub Actions Pinning Recommendation
+        uses: actions/github-script@v7
+        with: *a30
       - name: Dependency audit
         run: echo "Running dependency audit"
       - name: Trivy image scan
